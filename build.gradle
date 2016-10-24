@@ -1,0 +1,42 @@
+plugins {
+    id "com.cinchapi.concourse-plugin" version "1.0.14"
+    id 'java'
+    id 'eclipse'
+    id 'maven'
+    id 'signing'
+}
+
+// The project version is controlled externally by the "version.sh" script.
+def getVersion = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'bash', 'version.sh'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+group = 'com.cinchapi'
+version  = getVersion()
+
+// Configure Concourse plugin
+bundle {
+    bundleName 'real-time-notifier'
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.0'
+}
+
+repositories {
+    mavenCentral()
+    maven {
+          url 'https://oss.sonatype.org/content/repositories/snapshots/'
+    }
+}
+
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
