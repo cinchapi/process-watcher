@@ -1,4 +1,4 @@
-package com.cinchapi.process.watcher;
+package com.cinchapi.common.process.watcher;
 
 import java.io.BufferedReader;
 import java.io.IOException;
