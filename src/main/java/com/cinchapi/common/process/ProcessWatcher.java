@@ -26,6 +26,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * A {@link ProcessWatcher} polls external processes (by id) for liveliness.
+ * When the process has terminated, a {@link ProcessTerminationListener} is
+ * executed.
+ * 
+ * 
+ * @author Jeff Nelson
+ */
 public class ProcessWatcher {
 
     /**
@@ -72,8 +80,8 @@ public class ProcessWatcher {
         }
         else {
             throw new UnsupportedOperationException(
-                    "This feature to check if a ProcessRunning is not supported for this platform : "
-                            + OPERATING_SYSTEM);
+                    "This feature is not supported for " + OPERATING_SYSTEM
+                            + " platform");
         }
     }
 
@@ -89,16 +97,29 @@ public class ProcessWatcher {
      */
     private static int PING_INTERVAL = 5000;
 
+    /**
+     * An executor for periodically checking the liveliness of a process.
+     */
     private ScheduledExecutorService executor;
 
+    /**
+     * A mapping from process id, to the {@link Future} result of the task
+     * submitted to the {@link #executor}.
+     */
     private final Map<Integer, Future<?>> watching = new HashMap<>();
 
+    /**
+     * Construct a new instance.
+     */
     public ProcessWatcher() {
         this.executor = Executors.newScheduledThreadPool(
                 Runtime.getRuntime().availableProcessors());
         ((ScheduledThreadPoolExecutor) executor).setRemoveOnCancelPolicy(true);
     }
 
+    /**
+     * Shutdown the process watcher.
+     */
     public void shutdown() {
         executor.shutdownNow();
     }
@@ -122,4 +143,5 @@ public class ProcessWatcher {
         }, PING_INTERVAL, PING_INTERVAL, TimeUnit.MILLISECONDS);
         watching.put(pid, ticket);
     }
+
 }
