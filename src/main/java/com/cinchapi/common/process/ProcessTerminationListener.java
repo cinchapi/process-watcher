@@ -16,13 +16,11 @@
 package com.cinchapi.common.process;
 
 /**
- * 
+ * Interface that defines a listener for each process.
  * 
  * @author Jeff Nelson
  */
 @FunctionalInterface
 public interface ProcessTerminationListener {
-    
     public void onTermination();
-
 }

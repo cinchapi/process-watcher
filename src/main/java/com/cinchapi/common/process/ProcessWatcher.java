@@ -26,6 +26,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * ProcessWatcher is a generic functionality that watches over a {@link process}
+ * or set of processes provided their input pids. It will automatically intimate
+ * the caller when the pid goes down and also shuts the respective watcher
+ * thread down. This can used to watch over any number of processes.
+ * 
+ * @author Raghavbabu
+ *
+ */
 public class ProcessWatcher {
 
     /**
@@ -43,18 +52,18 @@ public class ProcessWatcher {
      * @param pid Id for the input process.
      * @return true if its running, false if not.
      */
-    private static boolean isProcessRunning(int pid) {
+    private static boolean isProcessRunning(String spid) {
         Process process = null;
-        String spid = String.valueOf(pid);
         if(OPERATING_SYSTEM.indexOf("mac") >= 0
                 || OPERATING_SYSTEM.indexOf("nux") >= 0
                 || OPERATING_SYSTEM.indexOf("sunos") >= 0) {
             try {
-                process = Runtime.getRuntime().exec("ps axo pid");
+                process = Runtime.getRuntime().exec("ps ax " + spid);
                 BufferedReader br = new BufferedReader(
                         new InputStreamReader(process.getInputStream()));
-                String line;
+                String line = null;
                 while ((line = br.readLine()) != null) {
+                    System.out.println(line);
                     if(line.contains(spid)) {
                         return true;
                     }
@@ -89,9 +98,16 @@ public class ProcessWatcher {
      */
     private static int PING_INTERVAL = 5000;
 
+    /**
+     * Executor service to schedule threads alloted to watch over different
+     * processes.
+     */
     private ScheduledExecutorService executor;
 
-    private final Map<Integer, Future<?>> watching = new HashMap<>();
+    /**
+     * Map of pid and a {@link Future} stored for each watched process.
+     */
+    private final Map<String, Future<?>> watching = new HashMap<>();
 
     public ProcessWatcher() {
         this.executor = Executors.newScheduledThreadPool(
@@ -99,6 +115,9 @@ public class ProcessWatcher {
         ((ScheduledThreadPoolExecutor) executor).setRemoveOnCancelPolicy(true);
     }
 
+    /**
+     * Shutdown the executor.
+     */
     public void shutdown() {
         executor.shutdownNow();
     }
@@ -112,7 +131,7 @@ public class ProcessWatcher {
      * @param listener the task to execute when the watched process is
      *            terminated
      */
-    public void watch(int pid, ProcessTerminationListener listener) {
+    public void watch(String pid, ProcessTerminationListener listener) {
         Future<?> ticket = executor.scheduleAtFixedRate(() -> {
             if(!isProcessRunning(pid)) {
                 listener.onTermination();
