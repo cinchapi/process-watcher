@@ -20,6 +20,7 @@ import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -51,19 +52,18 @@ public class ProcessWatcher {
      * @param pid Id for the input process.
      * @return true if its running, false if not.
      */
-    private static boolean isProcessRunning(String spid) {
+    private static boolean isProcessRunning(String pid) {
         Process process = null;
         if(OPERATING_SYSTEM.indexOf("mac") >= 0
                 || OPERATING_SYSTEM.indexOf("nux") >= 0
                 || OPERATING_SYSTEM.indexOf("sunos") >= 0) {
             try {
-                process = Runtime.getRuntime().exec("ps ax " + spid);
+                process = Runtime.getRuntime().exec("ps ax " + pid);
                 BufferedReader br = new BufferedReader(
                         new InputStreamReader(process.getInputStream()));
                 String line = null;
                 while ((line = br.readLine()) != null) {
-                    System.out.println(line);
-                    if(line.contains(spid)) {
+                    if(line.contains(pid)) {
                         return true;
                     }
                 }
@@ -140,8 +140,19 @@ public class ProcessWatcher {
                 Future<?> ticket0 = watching.get(pid);
                 ticket0.cancel(true);
             }
-        }, PING_INTERVAL, PING_INTERVAL, TimeUnit.MILLISECONDS);
+        }, 0, PING_INTERVAL, TimeUnit.MILLISECONDS);
         watching.put(pid, ticket);
+    }
+
+    public static void main(String... args) throws InterruptedException {
+        ProcessWatcher watcher = new ProcessWatcher();
+        CountDownLatch latch = new CountDownLatch(1);
+        watcher.watch("81330", () -> {
+            System.out.println("Process has been terminated");
+            latch.countDown();
+        });
+        latch.await();
+        System.exit(0);
     }
 
 }
