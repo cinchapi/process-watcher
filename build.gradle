@@ -2,7 +2,8 @@ plugins {
     id 'java'
     id 'eclipse'
     id 'maven'
-    id 'signing'
+    id 'maven-publish'
+    id "com.jfrog.bintray" version "1.7"
 }
 
 // The project version is controlled externally by the "version.sh" script.
