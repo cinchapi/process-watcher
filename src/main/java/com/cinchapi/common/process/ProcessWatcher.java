@@ -51,18 +51,18 @@ public class ProcessWatcher {
      * @param pid Id for the input process.
      * @return true if its running, false if not.
      */
-    private static boolean isProcessRunning(int pid) {
+    private static boolean isProcessRunning(String spid) {
         Process process = null;
-        String spid = String.valueOf(pid);
         if(OPERATING_SYSTEM.indexOf("mac") >= 0
                 || OPERATING_SYSTEM.indexOf("nux") >= 0
                 || OPERATING_SYSTEM.indexOf("sunos") >= 0) {
             try {
-                process = Runtime.getRuntime().exec("ps axo pid");
+                process = Runtime.getRuntime().exec("ps ax " + spid);
                 BufferedReader br = new BufferedReader(
                         new InputStreamReader(process.getInputStream()));
-                String line;
+                String line = null;
                 while ((line = br.readLine()) != null) {
+                    System.out.println(line);
                     if(line.contains(spid)) {
                         return true;
                     }
@@ -106,7 +106,7 @@ public class ProcessWatcher {
      * A mapping from process id, to the {@link Future} result of the task
      * submitted to the {@link #executor}.
      */
-    private final Map<Integer, Future<?>> watching = new HashMap<>();
+    private final Map<String, Future<?>> watching = new HashMap<>();
 
     /**
      * Construct a new instance.
@@ -133,7 +133,7 @@ public class ProcessWatcher {
      * @param listener the task to execute when the watched process is
      *            terminated
      */
-    public void watch(int pid, ProcessTerminationListener listener) {
+    public void watch(String pid, ProcessTerminationListener listener) {
         Future<?> ticket = executor.scheduleAtFixedRate(() -> {
             if(!isProcessRunning(pid)) {
                 listener.onTermination();

@@ -1,5 +1,4 @@
 plugins {
-    id "com.cinchapi.concourse-plugin" version "1.0.14"
     id 'java'
     id 'eclipse'
     id 'maven'
@@ -18,11 +17,12 @@ def getVersion = { ->
 
 group = 'com.cinchapi'
 version  = getVersion()
-
-// Configure Concourse plugin
-bundle {
-    bundleName 'real-time-notifier'
-}
+// Drop the build component from version number and use that for
+// publishing
+ext.mavenVersion = version.split('\\.')
+ext.mavenVersion[3] = ext.mavenVersion[3].replaceAll("[0-9]+-", "-")
+ext.mavenVersion[3] = ext.mavenVersion[3].replaceAll("[0-9]+", "").trim()
+ext.mavenVersion = ext.mavenVersion.join(".").replace(".-", "-").replaceAll('\\.$', "")
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.0'
@@ -30,6 +30,7 @@ task wrapper(type: Wrapper) {
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven {
           url 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
@@ -38,5 +39,10 @@ repositories {
 test {
     testLogging {
         showStandardStreams = true
+    }
+}
+install {
+    repositories.mavenInstaller {
+        pom.version = mavenVersion
     }
 }

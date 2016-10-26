@@ -27,5 +27,4 @@ public interface ProcessTerminationListener {
      * Execute the following task when a watched process has terminated.
      */
     public void onTermination();
-
 }
