@@ -36,13 +36,28 @@ repositories {
     }
 }
 
-test {
-    testLogging {
-        showStandardStreams = true
+publishing {
+    publications {
+        BintrayPublication(MavenPublication) {
+            from components.java
+            groupId group
+            artifactId project.name
+            version mavenVersion
+        }
     }
 }
-install {
-    repositories.mavenInstaller {
-        pom.version = mavenVersion
+
+bintray {
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+    publications = ['BintrayPublication']
+    pkg {
+        repo = 'maven'
+        name = 'process-watcher'
+        userOrg = 'cinchapi'
+        version {
+            name = mavenVersion
+            released = new Date()
+        }
     }
 }
