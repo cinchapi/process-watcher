@@ -143,16 +143,4 @@ public class ProcessWatcher {
         }, 0, PING_INTERVAL, TimeUnit.MILLISECONDS);
         watching.put(pid, ticket);
     }
-
-    public static void main(String... args) throws InterruptedException {
-        ProcessWatcher watcher = new ProcessWatcher();
-        CountDownLatch latch = new CountDownLatch(1);
-        watcher.watch("81330", () -> {
-            System.out.println("Process has been terminated");
-            latch.countDown();
-        });
-        latch.await();
-        System.exit(0);
-    }
-
 }
