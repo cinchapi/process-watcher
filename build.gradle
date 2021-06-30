@@ -3,7 +3,6 @@ plugins {
     id 'eclipse'
     id 'maven'
     id 'maven-publish'
-    id "com.jfrog.bintray" version "1.7"
 }
 
 // The project version is controlled externally by the "version.sh" script.
@@ -35,30 +34,91 @@ repositories {
     maven {
           url 'https://oss.sonatype.org/content/repositories/snapshots/'
     }
+    maven {
+    url "https://dl.cloudsmith.io/public/cinchapi/open-source/maven/"
+
+  }
+  maven {
+    url "https://dl.cloudsmith.io/public/cinchapi/open-source-snapshots/maven/"
+
+  }
+  maven {
+    url "https://dl.cloudsmith.io/public/cinchapi/platform/maven/"
+
+  }
+  maven {
+    url "https://dl.cloudsmith.io/public/cinchapi/platform-snapshots/maven/"
+
+  }
+  maven {
+    url "https://dl.cloudsmith.io/public/cinchapi/enterprise/maven/"
+    credentials {
+      username System.getenv('CLOUDSMITH_API_USER')
+      password System.getenv('CLOUDSMITH_API_KEY')
+    }
+  }
+  maven {
+    url "https://dl.cloudsmith.io/public/cinchapi/enterprise-snapshots/maven/"
+    credentials {
+      username System.getenv('CLOUDSMITH_API_USER')
+      password System.getenv('CLOUDSMITH_API_KEY')
+    }
+  }
+  maven {
+    url 'https://oss.sonatype.org/content/repositories/snapshots/'
+  }
+}
+
+jar {
+  manifest {
+    attributes("Specificiation-Title": project.name, "Specificiation-Version": version, "Implementation-Version": version)
+  }
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+artifacts {
+  archives sourcesJar
+  archives javadocJar
 }
 
 publishing {
-    publications {
-        BintrayPublication(MavenPublication) {
-            from components.java
-            groupId group
-            artifactId project.name
-            version mavenVersion
-        }
+  repositories {
+    maven {
+      name = 'cloudsmith'
+      def releasesRepoUrl = "https://api-g.cloudsmith.io/maven/cinchapi/open-source/"
+      def snapshotsRepoUrl = "https://api-g.cloudsmith.io/maven/cinchapi/open-source-snapshots/"
+      url = mavenVersion.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+      credentials {
+        username = System.getenv('CLOUDSMITH_API_USER')
+        password = System.getenv('CLOUDSMITH_API_KEY')
+      }
     }
-}
-
-bintray {
-    user = System.getenv('BINTRAY_USER')
-    key = System.getenv('BINTRAY_KEY')
-    publications = ['BintrayPublication']
-    pkg {
-        repo = 'maven'
-        name = 'process-watcher'
-        userOrg = 'cinchapi'
-        version {
-            name = mavenVersion
-            released = new Date()
-        }
+  }
+  publications {
+    maven(MavenPublication) {
+      from components.java
+      artifact sourcesJar
+      artifact javadocJar
+      groupId group
+      artifactId project.name
+      version mavenVersion
     }
+  }
 }
