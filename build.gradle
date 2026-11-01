@@ -15,14 +15,20 @@ def getVersion = { ->
     return stdout.toString().trim()
 }
 
+// The version that a build version publishes as, also from the "version.sh"
+// script, which drops only the build number and keeps the branch's name whole.
+def getPublishedVersion = { buildVersion ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'bash', 'version.sh', '--published', buildVersion
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
 group = 'com.cinchapi'
 version  = getVersion()
-// Drop the build component from version number and use that for
-// publishing
-ext.mavenVersion = version.split('\\.')
-ext.mavenVersion[3] = ext.mavenVersion[3].replaceAll("[0-9]+-", "-")
-ext.mavenVersion[3] = ext.mavenVersion[3].replaceAll("[0-9]+", "").trim()
-ext.mavenVersion = ext.mavenVersion.join(".").replace(".-", "-").replaceAll('\\.$', "")
+ext.mavenVersion = getPublishedVersion(version)
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.0'
@@ -104,7 +110,9 @@ publishing {
       name = 'cloudsmith'
       def releasesRepoUrl = "https://api-g.cloudsmith.io/maven/cinchapi/open-source/"
       def snapshotsRepoUrl = "https://api-g.cloudsmith.io/maven/cinchapi/open-source-snapshots/"
-      url = mavenVersion.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+      // Only a master build publishes a plain X.Y.Z, so every other version,
+      // such as a release candidate or a feature build, is a snapshot.
+      url = (mavenVersion ==~ /\d+\.\d+\.\d+/) ? releasesRepoUrl : snapshotsRepoUrl
       credentials {
         username = System.getenv('CLOUDSMITH_API_USER')
         password = System.getenv('CLOUDSMITH_API_KEY')
